@@ -83,7 +83,7 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    NSURL *_url = [NSURL URLWithString:url];
+    NSURL *_url = [NSURL fileURLWithPath:url];
     NSData *imageData = [NSData dataWithContentsOfURL:_url];
     UIImage *image = [UIImage imageWithData:imageData];
     MLKVisionImage *visionImage = [[MLKVisionImage alloc] initWithImage:image];
