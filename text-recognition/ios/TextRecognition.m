@@ -42,12 +42,12 @@ RCT_EXPORT_MODULE()
 
 - (NSDictionary*)lineToDict: (MLKTextLine*)line {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-    
+
     [dict setObject:line.text forKey:@"text"];
     [dict setObject:[self frameToDict:line.frame] forKey:@"frame"];
     [dict setObject:[self pointsToDicts:line.cornerPoints] forKey:@"cornerPoints"];
     [dict setObject:[self langsToDicts:line.recognizedLanguages] forKey:@"recognizedLanguages"];
-    
+
     NSMutableArray *elements = [NSMutableArray array];
     for (MLKTextElement* element in line.elements) {
         [elements addObject:@{
@@ -57,24 +57,24 @@ RCT_EXPORT_MODULE()
         }];
     }
     [dict setObject:elements forKey:@"elements"];
-    
+
     return dict;
 }
 
 - (NSDictionary*)blockToDict: (MLKTextBlock*)block {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-    
+
     [dict setObject:block.text forKey:@"text"];
     [dict setObject:[self frameToDict:block.frame] forKey:@"frame"];
     [dict setObject:[self pointsToDicts:block.cornerPoints] forKey:@"cornerPoints"];
     [dict setObject:[self langsToDicts:block.recognizedLanguages] forKey:@"recognizedLanguages"];
-    
+
     NSMutableArray *lines = [NSMutableArray array];
     for (MLKTextLine *line in block.lines) {
         [lines addObject:[self lineToDict:line]];
     }
     [dict setObject:lines forKey:@"lines"];
-    
+
     return dict;
 }
 
@@ -83,9 +83,9 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    NSURL *_url = [NSURL fileURLWithPath:url];
-    NSData *imageData = [NSData dataWithContentsOfURL:_url];
-    UIImage *image = [UIImage imageWithData:imageData];
+    UIImage *img = [[UIImage alloc] initWithContentsOfFile:url];
+    UIImage* image = fixImageOrientation(img);
+
     MLKVisionImage *visionImage = [[MLKVisionImage alloc] initWithImage:image];
     visionImage.orientation = image.imageOrientation;
 
@@ -106,7 +106,7 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
     } else {
         return reject(@"Text Recognition", @"Unsupported script", nil);
     }
-    
+
     MLKTextRecognizer *textRecognizer = [MLKTextRecognizer textRecognizerWithOptions:options];
 
     [textRecognizer processImage:visionImage
@@ -115,11 +115,11 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
         if (error != nil || _result == nil) {
             return reject(@"Text Recognition", @"Text recognition failed", error);
         }
-        
+
         NSMutableDictionary *result = [NSMutableDictionary dictionary];
-        
+
         [result setObject:_result.text forKey:@"text"];
-        
+
         NSMutableArray *blocks = [NSMutableArray array];
         for (MLKTextBlock *block in _result.blocks) {
             [blocks addObject:[self blockToDict:block]];
@@ -128,6 +128,19 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
 
         resolve(result);
     }];
+
+}
+
+UIImage* fixImageOrientation(UIImage* sourceImage) {
+    if (sourceImage.imageOrientation == UIImageOrientationUp) {
+        return sourceImage;
+    }
+    UIGraphicsBeginImageContextWithOptions(sourceImage.size, NO, sourceImage.scale);
+    [sourceImage drawInRect:CGRectMake(0,0,sourceImage.size.width, sourceImage.size.height)];
+    UIImage* newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return newImage;
 }
 
 @end
