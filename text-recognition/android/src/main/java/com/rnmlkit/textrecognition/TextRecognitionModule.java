@@ -2,6 +2,7 @@ package com.rnmlkit.textrecognition;
 
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.media.Image;
 import android.net.Uri;
 import android.graphics.BitmapFactory;
 import android.graphics.Bitmap;
@@ -35,26 +36,34 @@ import java.io.IOException;
 import java.net.URL;
 
 public class TextRecognitionModule extends ReactContextBaseJavaModule {
+	private static InputImage inputImage;
+
+	public static void setInputImage(Image image, int rotationDegrees) {
+		InputImage img =
+				InputImage.fromMediaImage(image, rotationDegrees);
+		TextRecognitionModule.inputImage = img;
+	}
 
     public TextRecognitionModule(ReactApplicationContext reactContext) {
         super(reactContext);
     }
 
-    @Override
+    @NonNull
+	@Override
     public String getName() {
         return "TextRecognition";
     }
 
     public static InputImage getInputImage(ReactApplicationContext reactContext, String url)
             throws IOException {
-
-        if (url.contains("http://") || url.contains("https://")) {
+		if (inputImage != null) {
+			return inputImage;
+		} else if (url.contains("http://") || url.contains("https://")) {
             URL urlInput = new URL(url);
             Bitmap image = BitmapFactory.decodeStream(urlInput.openConnection().getInputStream());
             InputImage inputImage = InputImage.fromBitmap(image, 0);
             return inputImage;
-        }
-        else {
+        } else {
             Uri uri = Uri.parse(url);
             InputImage inputImage = InputImage.fromFilePath(reactContext, uri);
             return inputImage;
