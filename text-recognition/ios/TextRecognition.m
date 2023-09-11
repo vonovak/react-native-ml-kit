@@ -1,4 +1,5 @@
 #import "TextRecognition.h"
+#import "VisionCamera-Swift.h"
 
 @import MLKitVision.MLKVisionImage;
 @import MLKitTextRecognition;
@@ -8,7 +9,17 @@
 @import MLKitTextRecognitionKorean;
 @import MLKitTextRecognitionDevanagari;
 
+
 @implementation TextRecognition
+
++ (UIImage *)lastImage {
+//   return TextRecognitionLastImage;
+//  NSData* data = [PhotoCaptureDelegate lastPhotoOutput];
+  UIImage* img = [TextRecognition imageWithCorrectOrientationFromData:nil];
+  return img;
+}
+
+
 
 RCT_EXPORT_MODULE()
 
@@ -48,8 +59,11 @@ RCT_EXPORT_MODULE()
     [dict setObject:[self pointsToDicts:line.cornerPoints] forKey:@"cornerPoints"];
     [dict setObject:[self langsToDicts:line.recognizedLanguages] forKey:@"recognizedLanguages"];
 
-    NSMutableArray *elements = [NSMutableArray array];
+    NSMutableArray *elements = [NSMutableArray arrayWithCapacity:line.elements.count];
+    MLKTextElement* lastElement = line.elements.lastObject;
     for (MLKTextElement* element in line.elements) {
+//      BOOL isLast = element == lastElement;
+//      NSString* text = isLast ? [NSString stringWithFormat:@"%@ ", element.text] : element.text;
         [elements addObject:@{
             @"text": element.text,
             @"frame": [self frameToDict:element.frame],
@@ -65,11 +79,11 @@ RCT_EXPORT_MODULE()
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
 
     [dict setObject:block.text forKey:@"text"];
-    [dict setObject:[self frameToDict:block.frame] forKey:@"frame"];
+//    [dict setObject:[self frameToDict:block.frame] forKey:@"frame"];
     [dict setObject:[self pointsToDicts:block.cornerPoints] forKey:@"cornerPoints"];
     [dict setObject:[self langsToDicts:block.recognizedLanguages] forKey:@"recognizedLanguages"];
 
-    NSMutableArray *lines = [NSMutableArray array];
+    NSMutableArray *lines = [NSMutableArray arrayWithCapacity:block.lines.count];
     for (MLKTextLine *line in block.lines) {
         [lines addObject:[self lineToDict:line]];
     }
@@ -83,8 +97,10 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    UIImage *img = [[UIImage alloc] initWithContentsOfFile:url];
-    UIImage* image = fixImageOrientation(img);
+  UIImage* image = [TextRecognition lastImage];
+  if (!image) {
+    image = fixImageOrientation([[UIImage alloc] initWithContentsOfFile:url]);
+  }
 
     MLKVisionImage *visionImage = [[MLKVisionImage alloc] initWithImage:image];
     visionImage.orientation = image.imageOrientation;
@@ -142,5 +158,22 @@ UIImage* fixImageOrientation(UIImage* sourceImage) {
     
     return newImage;
 }
+
++ (UIImage *)imageWithCorrectOrientationFromData:(NSData *)data {
+    UIImage *image = [UIImage imageWithData:data];
+    if (image.imageOrientation == UIImageOrientationUp) return image;
+
+    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+    format.scale = image.scale;
+
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:image.size format:format];
+
+    UIImage *normalizedImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull rendererContext) {
+        [image drawInRect:(CGRect){.origin = CGPointZero, .size = image.size}];
+    }];
+
+    return normalizedImage;
+}
+
 
 @end

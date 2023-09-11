@@ -34,6 +34,7 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Iterator;
 
 public class TextRecognitionModule extends ReactContextBaseJavaModule {
 	private static InputImage inputImage;
@@ -111,9 +112,14 @@ public class TextRecognitionModule extends ReactContextBaseJavaModule {
         map.putArray("recognizedLanguages", langToMap(line.getRecognizedLanguage()));
 
         WritableArray elements = Arguments.createArray();
-        for (Text.Element element : line.getElements()) {
+		Iterator<Text.Element> iterator = line.getElements().iterator();
+		while (iterator.hasNext()) {
+			Text.Element element = iterator.next();
             WritableMap el = Arguments.createMap();
-            el.putString("text", element.getText());
+			// NOTE comparing using == does not work for some reason!
+//			boolean isLast = !iterator.hasNext();
+			boolean isLast = false;
+            el.putString("text", element.getText() + (isLast ? " " : ""));
             if (element.getBoundingBox() != null) {
                 el.putMap("frame", rectToMap(element.getBoundingBox()));
             }
@@ -130,10 +136,10 @@ public class TextRecognitionModule extends ReactContextBaseJavaModule {
     private ReadableMap blockToMap(Text.TextBlock block) {
         WritableMap map = Arguments.createMap();
         map.putString("text", block.getText());
-        if (block.getBoundingBox() != null) {
-            map.putMap("frame", rectToMap(block.getBoundingBox()));
-        }
-        if (block.getCornerPoints() != null) {
+//        if (block.getBoundingBox() != null) {
+//            map.putMap("frame", rectToMap(block.getBoundingBox()));
+//        }
+		if (block.getCornerPoints() != null) {
 			map.putArray("cornerPoints", cornerPointsToMap(block.getCornerPoints()));
 		}
 
