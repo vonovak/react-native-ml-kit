@@ -112,22 +112,17 @@ public class TextRecognitionModule extends ReactContextBaseJavaModule {
         map.putArray("recognizedLanguages", langToMap(line.getRecognizedLanguage()));
 
         WritableArray elements = Arguments.createArray();
-		Iterator<Text.Element> iterator = line.getElements().iterator();
-		while (iterator.hasNext()) {
-			Text.Element element = iterator.next();
-            WritableMap el = Arguments.createMap();
-			// NOTE comparing using == does not work for some reason!
-//			boolean isLast = !iterator.hasNext();
-			boolean isLast = false;
-            el.putString("text", element.getText() + (isLast ? " " : ""));
-            if (element.getBoundingBox() != null) {
-                el.putMap("frame", rectToMap(element.getBoundingBox()));
-            }
-            if (element.getCornerPoints() != null) {
-            	el.putArray("cornerPoints", cornerPointsToMap(element.getCornerPoints()));
+		for (Text.Element element : line.getElements()) {
+			WritableMap el = Arguments.createMap();
+			el.putString("text", element.getText());
+			if (element.getBoundingBox() != null) {
+				el.putMap("frame", rectToMap(element.getBoundingBox()));
 			}
-            elements.pushMap(el);
-        }
+			if (element.getCornerPoints() != null) {
+				el.putArray("cornerPoints", cornerPointsToMap(element.getCornerPoints()));
+			}
+			elements.pushMap(el);
+		}
         map.putArray("elements", elements);
 
         return map;

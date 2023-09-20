@@ -1,5 +1,5 @@
 #import "TextRecognition.h"
-#import "VisionCamera-Swift.h"
+//#import "VisionCamera-Swift.h"
 
 @import MLKitVision.MLKVisionImage;
 @import MLKitTextRecognition;
