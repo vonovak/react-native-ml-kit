@@ -60,10 +60,7 @@ RCT_EXPORT_MODULE()
     [dict setObject:[self langsToDicts:line.recognizedLanguages] forKey:@"recognizedLanguages"];
 
     NSMutableArray *elements = [NSMutableArray arrayWithCapacity:line.elements.count];
-    MLKTextElement* lastElement = line.elements.lastObject;
     for (MLKTextElement* element in line.elements) {
-//      BOOL isLast = element == lastElement;
-//      NSString* text = isLast ? [NSString stringWithFormat:@"%@ ", element.text] : element.text;
         [elements addObject:@{
             @"text": element.text,
             @"frame": [self frameToDict:element.frame],
@@ -99,7 +96,9 @@ RCT_EXPORT_METHOD(recognize: (nonnull NSString*)url
 {
   UIImage* image = [TextRecognition lastImage];
   if (!image) {
-    image = fixImageOrientation([[UIImage alloc] initWithContentsOfFile:url]);
+    NSURL *imageURL = [NSURL URLWithString:url];
+    NSString *imageFilePath = [imageURL path];
+    image = fixImageOrientation([[UIImage alloc] initWithContentsOfFile:imageFilePath]);
   }
 
     MLKVisionImage *visionImage = [[MLKVisionImage alloc] initWithImage:image];
